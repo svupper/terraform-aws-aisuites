@@ -1,0 +1,5 @@
+aws_access_key = "<ACCESS_KEY>"
+aws_secret_key = "<SECRET_KEY>"
+access_ip      = "0.0.0.0/0"
+ami            = "ami-05b457b541faec0ca"
+instance_type  = "g4dn.xlarge"
