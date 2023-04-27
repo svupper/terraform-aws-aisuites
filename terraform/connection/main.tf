@@ -1,21 +1,37 @@
 data "local_file" "private_key" {
-  filename = "key.pem"
+  filename = "../${var.key_name}.pem"
 }
 
 # Generate inventory file
 resource "local_file" "inventory" {
-  filename = "./inventory/hosts.ini"
-  content = <<EOF
+  filename = "../ansible/inventory/hosts.ini"
+  content  = <<EOF
 [webserver]
 ${var.ec2_public_ip}
 EOF
 }
 
-resource "null_resource" "ansible"{
+resource "null_resource" "try_ssh" {
+  provisioner "remote-exec" {
+    connection {
+      host        = var.ec2_public_ip
+      user        = "ubuntu"
+      type        = "ssh"
+      private_key = data.local_file.private_key.content
+    }
+
+    inline = ["echo 'connected!'"]
+  }
+}
+
+resource "null_resource" "ansible" {
+  depends_on = [
+    null_resource.try_ssh
+  ]
   provisioner "local-exec" {
     command = <<-EOT
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible-playbook -i inventory/hosts.ini playbooks/main.yml -u ubuntu --private-key key.pem
+ansible-playbook -i ../ansible/inventory/hosts.ini ../ansible/playbooks/main.yml -u ubuntu --private-key ../${var.key_name}.pem
     EOT
   }
 }

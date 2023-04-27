@@ -1,6 +1,6 @@
 # Local .terraform directories
 **/.terraform/*
-
+**/venv
 # .tfstate files
 *.tfstate
 *.tfstate.*
@@ -8,6 +8,9 @@
 *.lock.*
 # Crash log files
 crash.log
+.env
+*.pem
+logs.txt
 
 # Ignore any .tfvars files that are generated automatically for each Terraform run. Most
 # .tfvars files are managed as part of configuration and so should be included in

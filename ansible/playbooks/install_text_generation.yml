@@ -1,0 +1,129 @@
+- name: Git Clone repo
+  become: yes
+  become_user: ubuntu
+  git:
+    repo: https://github.com/oobabooga/text-generation-webui.git
+    dest: "{{ HOME }}/text-generation-webui"
+
+- name: Download file from a file path
+  become: yes
+  become_user: ubuntu
+  get_url:
+    url: https://github.com/git-lfs/git-lfs/releases/download/v3.3.0/git-lfs-linux-amd64-v3.3.0.tar.gz
+    dest: "{{ HOME }}/git-lfs-linux-amd64-v3.3.0.tar.gz"
+
+# - name: Unarchive lfs installer
+#   unarchive:
+#     src: "{{ HOME }}/git-lfs-linux-amd64-v3.3.0.tar.gz"
+#     dest: "{{ HOME }}"
+#   args:
+#     chdir: "{{ HOME }}"
+
+- name: Unarchive with command
+  become: yes
+  become_user: ubuntu
+  command: tar -xvzf git-lfs-linux-amd64-v3.3.0.tar.gz
+  args:
+    chdir: "{{ HOME }}"
+
+- name: Install lfs
+  become: yes
+  become_user: ubuntu
+  command: sudo ./install.sh
+  args:
+    chdir: "{{ HOME }}/git-lfs-3.3.0"
+
+# - name: Install lfs
+#   become: yes
+#   become_user: ubuntu
+#   command: curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+
+- name: Download Pygmalion from HF
+  become: yes
+  become_user: ubuntu
+  command: git lfs install
+
+- name: Git Clone repo Pygmalion
+  become: yes
+  become_user: ubuntu
+  git:
+    repo: https://huggingface.co/mayaeary/pygmalion-6b-4bit-128g
+    dest: "{{ HOME }}/text-generation-webui/models/pygmalion-6b-4bit-128g"
+
+
+# - name: Init Docker setup
+#   become: yes
+#   become_user: ubuntu
+#   command: ln -s docker/{Dockerfile,docker-compose.yml,.dockerignore} .
+#   args:
+#     chdir: "{{ HOME }}/text-generation-webui"
+
+- name: Create symbolic link
+  become: yes
+  become_user: ubuntu
+  file:
+    src: "{{ HOME }}/text-generation-webui/docker/{{ item.src }}"
+    dest: "{{ HOME }}/text-generation-webui/{{ item.dest }}"
+    state: link
+  loop:
+    - src: "docker-compose.yml"
+      dest: "docker-compose.yml"
+    - src: "Dockerfile"
+      dest: "Dockerfile"
+    - src: ".dockerignore"
+      dest: ".dockerignore"
+
+- name: Create a .env from docker/.env.example
+  become: yes
+  become_user: ubuntu
+  
+  ansible.builtin.copy:
+    src: "{{ HOME }}/text-generation-webui/docker/.env.example"
+    dest: "{{ HOME }}/text-generation-webui/.env"
+    remote_src: yes
+
+# - name: Init Env
+#   become: yes
+#   command: cp docker/.env.example .env
+#   args:
+#     chdir: "{{ HOME }}/text-generation-webui"
+
+- name: Setup the HF model
+  become: yes
+  become_user: ubuntu
+  lineinfile:
+    path: "{{ HOME }}/text-generation-webui/.env"
+    regexp: '^CLI_ARGS='
+    line: "CLI_ARGS=--model pygmalion-6b-4bit-128g --chat --groupsize 128 --wbits 4 --listen --api --port 7861 --extension llava sd_api_pictures whisper_stt silero_tts" 
+
+- name: Setup the port
+  become: yes
+  become_user: ubuntu
+  lineinfile:
+    path: "{{ HOME }}/text-generation-webui/.env"
+    regexp: '^HOST_PORT='
+    line: "HOST_PORT=7861"
+
+- name: Setup the port
+  become: yes
+  become_user: ubuntu
+  lineinfile:
+    path: "{{ HOME }}/text-generation-webui/.env"
+    regexp: '^CONTAINER_PORT='
+    line: "CONTAINER_PORT=7861"
+    
+
+- name: Docker container download
+  become: yes
+  become_user: ubuntu
+  command: docker compose up --build
+  args:
+    chdir: "{{ HOME }}/text-generation-webui"
+  async: 5000
+  poll: 0
+  register: is_text_gen_up
+
+- name: Register dummy host with variable
+  add_host:
+    name: "text_up"
+    is_text_gen_up: " {{ is_text_gen_up }}"

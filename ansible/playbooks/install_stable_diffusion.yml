@@ -1,0 +1,31 @@
+- name: Git Clone repo
+  become: yes
+  become_user: ubuntu
+  git:
+    repo: https://github.com/svupper/stable-diffusion-webui-docker.git
+    dest: "{{ HOME }}/stable-diffusion-webui-docker"
+
+- name: Docker compose Download build with command
+  become: yes
+  become_user: ubuntu
+  command: docker compose --profile download up --build
+  args:
+    chdir: "{{ HOME }}/stable-diffusion-webui-docker"
+
+
+- name: Docker compose Auto build with command
+  become: yes
+  become_user: ubuntu
+  command: docker compose --profile {{ SD_PROFILE }} up --build
+  args:
+    chdir: "{{ HOME }}/stable-diffusion-webui-docker"
+  async: 5000
+  poll: 0
+  register: is_stable_up
+
+- name: Register dummy host with variable
+  add_host:
+    name: "stable_up"
+    is_stable_up: " {{ is_stable_up }}"
+
+  

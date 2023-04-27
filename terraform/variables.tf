@@ -1,7 +1,7 @@
 variable "instance_name" {
-  description = "Value of the Name tag for the EC2 instance"
+  description = "Name of the EC2 instance"
   type        = string
-  default     = "ExampleAppServerInstance"
+  default     = "terraform-ec2-instance"
 }
 
 variable "aws_access_key" {
@@ -23,9 +23,15 @@ variable "aws_region" {
 
 variable "instance_type" {
   type    = string
-  default = "eu-west-3"
+  default = "t2.micro"
 }
 variable "ami" {
   type    = string
-  default = "eu-west-3"
+  default = "ami-0b69ea66ff7391e80"
 }
+
+variable "volume_size" {
+  type    = number
+  default = 100
+}
+

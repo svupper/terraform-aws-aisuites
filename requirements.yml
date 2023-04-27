@@ -1,0 +1,6 @@
+# Install a role from the Ansible Galaxy
+roles:
+  # Install a role from Ansible Galaxy.
+  - name: nvidia.nvidia_driver
+  - name: nvidia.nvidia_docker
+

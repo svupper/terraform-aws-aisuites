@@ -1,0 +1,47 @@
+- name: Provisioning
+  hosts: webserver
+  gather_facts: yes
+  become: yes
+  #become_user: root
+
+  roles:
+    - role: nvidia.nvidia_docker
+    - role: nvidia.nvidia_driver
+
+
+  vars:
+    OPEN_AI_KEY: "{{ lookup('env', 'OPENAI_API_KEY') }}"
+    HUGGINGFACE_KEY: "{{ lookup('env', 'HUGGINGFACE_API_KEY') }}"
+    SD_PROFILE: "auto"
+    HOME: "/home/ubuntu"
+    ansible_remote_tmp: "/tmp"
+
+  tasks:
+    - name: sgpt alias
+      become: yes
+      become_user: ubuntu
+      lineinfile:
+        path: "{{ HOME }}/.bashrc"
+        line: "{{ item }}"
+      loop:
+        - "export OPENAI_API_KEY={{ OPEN_AI_KEY }}"
+        - "alias sgpt='docker run --rm --env OPENAI_API_KEY --volume gpt-cache:/tmp/shell_gpt ghcr.io/ther1d/shell_gpt'"
+    - include_tasks:
+        install_docker.yml
+    - include_tasks:
+        install_stable_diffusion.yml
+    - include_tasks:
+        install_text_generation.yml
+
+    # - name: Check sync status
+    #   async_status:
+    #     jid: "{{ async_result_item.ansible_job_id }}"
+    #   loop: 
+    #     - "{{ hostvars['stable_up']['is_stable_up'] }}"
+    #     - "{{ hostvars['text_up']['is_text_gen_up'] }}"
+    #   loop_control:
+    #     loop_var: "async_result_item"
+    #   register: async_poll_results
+    #   until: async_poll_results.finished
+    #   retries: 180
+
